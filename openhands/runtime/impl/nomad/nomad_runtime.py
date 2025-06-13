@@ -307,8 +307,9 @@ class NomadRuntime(ActionExecutionClient):
                                         {
                                             'Type': 'http',
                                             'Path': '/health',
-                                            'Interval': '10s',
-                                            'Timeout': '3s',
+                                            # Note: Service check intervals also need nanoseconds in JSON API
+                                            'Interval': 10000000000,  # 10 seconds in nanoseconds
+                                            'Timeout': 3000000000,  # 3 seconds in nanoseconds
                                         }
                                     ],
                                 }
