@@ -88,6 +88,32 @@ class SandboxConfig(BaseModel):
         description="Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'",
     )
 
+    # Nomad runtime configuration
+    nomad_address: str | None = Field(
+        default=None,
+        description="The address of the Nomad cluster (e.g., 'http://localhost:4646'). If not set, will use NOMAD_ADDR environment variable or default to 'http://localhost:4646'.",
+    )
+    nomad_token: str | None = Field(
+        default=None,
+        description='The authentication token for Nomad API. If not set, will use NOMAD_TOKEN environment variable.',
+    )
+    nomad_namespace: str | None = Field(
+        default=None,
+        description="The Nomad namespace to use for jobs. If not set, will use NOMAD_NAMESPACE environment variable or default to 'default'.",
+    )
+    nomad_datacenter: str | None = Field(
+        default=None,
+        description="The Nomad datacenter to use for jobs. If not set, will use NOMAD_DATACENTER environment variable or default to 'dc1'.",
+    )
+    nomad_cpu: int | None = Field(
+        default=None,
+        description='CPU allocation for Nomad jobs in MHz. Default is 1000 MHz.',
+    )
+    nomad_memory: int | None = Field(
+        default=None,
+        description='Memory allocation for Nomad jobs in MB. Default is 2048 MB.',
+    )
+
     model_config = {'extra': 'forbid'}
 
     @classmethod

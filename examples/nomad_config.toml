@@ -1,0 +1,36 @@
+# Example configuration for using OpenHands with Nomad runtime
+
+[core]
+# Set the runtime to use Nomad
+runtime = "nomad"
+
+[sandbox]
+# Nomad cluster configuration
+nomad_address = "http://localhost:4646"  # Nomad API address
+# nomad_token = "your-nomad-token"       # Optional: Nomad ACL token
+# nomad_namespace = "openhands"          # Optional: Nomad namespace (default: "default")
+# nomad_datacenter = "dc1"               # Optional: Nomad datacenter (default: "dc1")
+
+# Resource allocation for Nomad jobs
+nomad_cpu = 1000      # CPU in MHz (default: 1000)
+nomad_memory = 2048   # Memory in MB (default: 2048)
+
+# Container image configuration
+runtime_container_image = "openhands-runtime:latest"  # Required: Runtime container image
+# base_container_image = "nikolaik/python-nodejs:python3.12-nodejs22"  # Alternative: base image to build from
+
+# GPU support (optional)
+# enable_gpu = true
+
+# Additional environment variables for the runtime
+[sandbox.runtime_startup_env_vars]
+# CUSTOM_VAR = "custom_value"
+
+# Example LLM configuration
+[llm]
+model = "gpt-4"
+api_key = "your-openai-api-key"
+
+# Example agent configuration
+[agent]
+name = "CodeActAgent"
