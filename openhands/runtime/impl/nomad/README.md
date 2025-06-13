@@ -25,10 +25,26 @@ You can configure the Nomad runtime using environment variables:
 
 ```bash
 export NOMAD_ADDR="http://your-nomad-cluster:4646"
-export NOMAD_TOKEN="your-nomad-token"  # Optional, for ACL-enabled clusters
-export NOMAD_NAMESPACE="openhands"     # Optional, default is "default"
-export NOMAD_DATACENTER="dc1"          # Optional, default is "dc1"
+export NOMAD_TOKEN="your-nomad-token"              # Optional, for ACL-enabled clusters
+export NOMAD_NAMESPACE="openhands"                 # Optional, default is "default"
+export NOMAD_DATACENTER="dc1"                      # Optional, default is "dc1"
+export NOMAD_ENABLE_SERVICE_DISCOVERY="true"       # Optional, default is "true"
 ```
+
+### Service Discovery Configuration
+
+By default, the Nomad runtime enables service discovery and health checks through Consul integration. This requires Consul to be available and properly configured with your Nomad cluster.
+
+**If you don't have Consul or want to disable service discovery:**
+
+```bash
+export NOMAD_ENABLE_SERVICE_DISCOVERY="false"
+```
+
+**Note**: Disabling service discovery will:
+- Remove the Consul version constraint (`${attr.consul.version} semver >= 1.8.0`)
+- Disable automatic health checks
+- Allow jobs to run on nodes without Consul
 
 ### Configuration File
 

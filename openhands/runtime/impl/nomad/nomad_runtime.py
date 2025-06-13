@@ -86,6 +86,12 @@ class NomadRuntime(ActionExecutionClient):
         self.nomad_datacenter = config.sandbox.nomad_datacenter or os.environ.get(
             'NOMAD_DATACENTER', 'dc1'
         )
+        
+        # Service discovery configuration (requires Consul)
+        # Set to False to disable service discovery if Consul is not available
+        self.enable_service_discovery = os.environ.get(
+            'NOMAD_ENABLE_SERVICE_DISCOVERY', 'true'
+        ).lower() in ('true', '1', 'yes')
 
         # Job configuration
         self.job_id = f'openhands-runtime-{sid}'
@@ -294,31 +300,35 @@ class NomadRuntime(ActionExecutionClient):
                                     }
                                 ],
                             },
-                            'Services': [
-                                {
-                                    'Name': f'openhands-runtime-{self.sid}',
-                                    'PortLabel': 'action_server',
-                                    'Tags': [
-                                        'openhands',
-                                        'runtime',
-                                        f'session-{self.sid}',
-                                    ],
-                                    'Checks': [
-                                        {
-                                            'Type': 'http',
-                                            'Path': '/health',
-                                            # Note: Service check intervals also need nanoseconds in JSON API
-                                            'Interval': 10000000000,  # 10 seconds in nanoseconds
-                                            'Timeout': 3000000000,  # 3 seconds in nanoseconds
-                                        }
-                                    ],
-                                }
-                            ],
                         }
                     ],
                 }
             ],
         }
+
+        # Add service discovery configuration if enabled (requires Consul)
+        if self.enable_service_discovery:
+            task = job_spec['TaskGroups'][0]['Tasks'][0]
+            task['Services'] = [
+                {
+                    'Name': f'openhands-runtime-{self.sid}',
+                    'PortLabel': 'action_server',
+                    'Tags': [
+                        'openhands',
+                        'runtime',
+                        f'session-{self.sid}',
+                    ],
+                    'Checks': [
+                        {
+                            'Type': 'http',
+                            'Path': '/health',
+                            # Note: Service check intervals also need nanoseconds in JSON API
+                            'Interval': 10000000000,  # 10 seconds in nanoseconds
+                            'Timeout': 3000000000,  # 3 seconds in nanoseconds
+                        }
+                    ],
+                }
+            ]
 
         # Add GPU support if enabled
         if self.config.sandbox.enable_gpu:
