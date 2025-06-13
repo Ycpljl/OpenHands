@@ -113,6 +113,14 @@ class SandboxConfig(BaseModel):
         default=None,
         description='Memory allocation for Nomad jobs in MB. Default is 2048 MB.',
     )
+    nomad_gpu_count: int | None = Field(
+        default=None,
+        description='Number of GPUs to allocate for Nomad jobs. Default is 1 when GPU is enabled.',
+    )
+    nomad_gpu_type: str | None = Field(
+        default=None,
+        description='GPU type constraint for Nomad jobs (e.g., "nvidia/tesla-v100"). Default is "nvidia/gpu".',
+    )
 
     model_config = {'extra': 'forbid'}
 

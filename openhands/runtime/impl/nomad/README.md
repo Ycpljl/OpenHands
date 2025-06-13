@@ -222,12 +222,127 @@ nomad alloc logs <allocation-id>
 3. **Image Security**: Use trusted container images and registries
 4. **Resource Limits**: Set appropriate CPU and memory limits to prevent resource exhaustion
 
+## GPU Support
+
+The Nomad runtime provides comprehensive GPU support with fine-grained control over GPU allocation and configuration.
+
+### Basic GPU Configuration
+
+```toml
+[sandbox]
+enable_gpu = true
+```
+
+### Advanced GPU Configuration
+
+```toml
+[sandbox]
+enable_gpu = true
+nomad_gpu_count = 2                    # Number of GPUs to allocate (default: 1)
+nomad_gpu_type = "nvidia/tesla-v100"   # Specific GPU type (default: "nvidia/gpu")
+```
+
+### GPU Configuration Options
+
+- **`enable_gpu`**: Enable GPU support (default: false)
+- **`nomad_gpu_count`**: Number of GPUs to allocate (default: 1 when GPU enabled)
+- **`nomad_gpu_type`**: GPU type constraint for specific GPU models:
+  - `"nvidia/gpu"` - Any NVIDIA GPU (default)
+  - `"nvidia/tesla-v100"` - NVIDIA Tesla V100
+  - `"nvidia/tesla-k80"` - NVIDIA Tesla K80
+  - `"nvidia/geforce-rtx-3080"` - NVIDIA GeForce RTX 3080
+  - Custom GPU types as configured in your Nomad cluster
+
+### What GPU Support Includes
+
+When GPU support is enabled, the runtime automatically:
+
+1. **Resource Allocation**: Requests the specified number and type of GPUs from Nomad
+2. **Docker Configuration**:
+   - Enables NVIDIA Docker runtime
+   - Mounts GPU device files (`/dev/nvidia*`, `/dev/nvidiactl`, `/dev/nvidia-uvm`)
+   - Adds necessary capabilities (`SYS_ADMIN`)
+3. **Environment Variables**:
+   - `NVIDIA_VISIBLE_DEVICES=all`
+   - `NVIDIA_DRIVER_CAPABILITIES=compute,utility`
+   - `CUDA_VISIBLE_DEVICES=all`
+4. **Node Constraints**: Ensures jobs are scheduled only on nodes with NVIDIA Docker runtime
+
+### Prerequisites for GPU Support
+
+**Nomad Cluster Requirements:**
+- Nomad nodes with NVIDIA GPU drivers installed
+- NVIDIA Docker runtime configured on GPU nodes
+- Nomad device plugin for NVIDIA GPUs enabled
+- Proper GPU device detection in Nomad
+
+**Nomad Configuration Example:**
+```hcl
+# nomad.hcl
+client {
+  enabled = true
+
+  # Enable device plugins
+  options {
+    "driver.allowlist" = "docker"
+  }
+}
+
+plugin "nvidia-gpu" {
+  config {
+    enabled = true
+    ignore_topology = false
+  }
+}
+```
+
+**Docker Configuration on Nomad Nodes:**
+```json
+{
+  "runtimes": {
+    "nvidia": {
+      "path": "nvidia-container-runtime",
+      "runtimeArgs": []
+    }
+  }
+}
+```
+
+### GPU Usage Examples
+
+**Single GPU for Machine Learning:**
+```toml
+[sandbox]
+enable_gpu = true
+nomad_gpu_count = 1
+runtime_container_image = "tensorflow/tensorflow:latest-gpu"
+```
+
+**Multiple GPUs for Distributed Training:**
+```toml
+[sandbox]
+enable_gpu = true
+nomad_gpu_count = 4
+nomad_gpu_type = "nvidia/tesla-v100"
+runtime_container_image = "pytorch/pytorch:latest"
+```
+
+**Specific GPU Model for Inference:**
+```toml
+[sandbox]
+enable_gpu = true
+nomad_gpu_count = 1
+nomad_gpu_type = "nvidia/geforce-rtx-3080"
+runtime_container_image = "nvcr.io/nvidia/pytorch:latest"
+```
+
 ## Performance Tuning
 
 1. **Resource Allocation**: Adjust `nomad_cpu` and `nomad_memory` based on workload
-2. **Placement**: Use Nomad constraints to place jobs on appropriate nodes
-3. **Scaling**: Consider using Nomad's horizontal autoscaling for high-load scenarios
-4. **Monitoring**: Integrate with Nomad's metrics and monitoring systems
+2. **GPU Allocation**: Configure `nomad_gpu_count` and `nomad_gpu_type` for optimal GPU utilization
+3. **Placement**: Use Nomad constraints to place jobs on appropriate nodes
+4. **Scaling**: Consider using Nomad's horizontal autoscaling for high-load scenarios
+5. **Monitoring**: Integrate with Nomad's metrics and monitoring systems
 
 ## Integration with CI/CD
 

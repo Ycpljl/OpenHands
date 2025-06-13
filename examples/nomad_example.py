@@ -98,6 +98,21 @@ async def main():
         print(f'  - Job type: {job_spec["Type"]}')
         print(f'  - Datacenters: {job_spec["Datacenters"]}')
         print(f'  - Task groups: {len(job_spec["TaskGroups"])}')
+
+        # Check GPU configuration
+        task_groups = job_spec.get('TaskGroups', [])
+        if task_groups:
+            tasks = task_groups[0].get('Tasks', [])
+            if tasks:
+                task = tasks[0]
+                resources = task.get('Resources', {})
+                devices = resources.get('Devices')
+                if devices:
+                    print(f'  - GPU devices: {len(devices)} configured')
+                    for device in devices:
+                        print(f'    - {device["Name"]}: {device["Count"]} units')
+                else:
+                    print('  - GPU devices: None (GPU disabled)')
     except Exception as e:
         print(f'✗ Failed to create job spec: {e}')
 
@@ -109,6 +124,8 @@ async def main():
     print('  - A running Nomad cluster')
     print('  - Network connectivity to Nomad API')
     print('  - Container image available to Nomad nodes')
+    if config.sandbox.enable_gpu:
+        print('  - GPU-enabled Nomad nodes with NVIDIA runtime')
 
     print('\nExample completed successfully!')
 

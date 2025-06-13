@@ -133,5 +133,120 @@ def test_close_method_safe():
     runtime.log.assert_called_with('info', 'Closing Nomad runtime')
 
 
+def test_gpu_job_spec_creation():
+    """Test that GPU configuration is properly added to job spec."""
+    from openhands.core.config import OpenHandsConfig
+
+    config = OpenHandsConfig(
+        runtime='nomad',
+        sandbox={
+            'enable_gpu': True,
+            'nomad_gpu_count': 2,
+            'nomad_gpu_type': 'nvidia/tesla-v100',
+            'runtime_container_image': 'test-image:latest',
+        },
+    )
+
+    runtime = NomadRuntime(config=config, event_stream=None, sid='test-session')
+    job_spec = runtime._create_job_spec()
+
+    # Check that GPU devices are added
+    task_groups = job_spec.get('TaskGroups', [])
+    assert len(task_groups) > 0
+
+    tasks = task_groups[0].get('Tasks', [])
+    assert len(tasks) > 0
+
+    task = tasks[0]
+    resources = task.get('Resources', {})
+    devices = resources.get('Devices', [])
+
+    # Should have GPU device configuration
+    assert len(devices) > 0
+    gpu_device = devices[0]
+    assert gpu_device['Name'] == 'nvidia/tesla-v100'
+    assert gpu_device['Count'] == 2
+
+    # Check Docker configuration for GPU
+    docker_config = task.get('Config', {})
+    assert docker_config.get('runtime') == 'nvidia'
+    assert 'cap_add' in docker_config
+    assert 'SYS_ADMIN' in docker_config['cap_add']
+    assert 'devices' in docker_config
+
+    # Check GPU environment variables
+    env = task.get('Env', {})
+    assert env.get('NVIDIA_VISIBLE_DEVICES') == 'all'
+    assert env.get('NVIDIA_DRIVER_CAPABILITIES') == 'compute,utility'
+    assert env.get('CUDA_VISIBLE_DEVICES') == 'all'
+
+    # Check constraints for NVIDIA runtime
+    constraints = task.get('Constraints', [])
+    nvidia_constraint = next(
+        (
+            c
+            for c in constraints
+            if c.get('LTarget') == '${attr.driver.docker.runtime.nvidia}'
+        ),
+        None,
+    )
+    assert nvidia_constraint is not None
+    assert nvidia_constraint['RTarget'] == 'true'
+    assert nvidia_constraint['Operand'] == '='
+
+
+def test_gpu_job_spec_defaults():
+    """Test that GPU configuration uses proper defaults."""
+    from openhands.core.config import OpenHandsConfig
+
+    config = OpenHandsConfig(
+        runtime='nomad',
+        sandbox={'enable_gpu': True, 'runtime_container_image': 'test-image:latest'},
+    )
+    # Don't set gpu_count or gpu_type to test defaults
+
+    runtime = NomadRuntime(config=config, event_stream=None, sid='test-session')
+    job_spec = runtime._create_job_spec()
+
+    # Check that default GPU configuration is used
+    task_groups = job_spec.get('TaskGroups', [])
+    tasks = task_groups[0].get('Tasks', [])
+    task = tasks[0]
+    resources = task.get('Resources', {})
+    devices = resources.get('Devices', [])
+
+    # Should use defaults
+    gpu_device = devices[0]
+    assert gpu_device['Name'] == 'nvidia/gpu'  # Default GPU type
+    assert gpu_device['Count'] == 1  # Default GPU count
+
+
+def test_no_gpu_job_spec():
+    """Test that GPU configuration is not added when GPU is disabled."""
+    from openhands.core.config import OpenHandsConfig
+
+    config = OpenHandsConfig(
+        runtime='nomad',
+        sandbox={'enable_gpu': False, 'runtime_container_image': 'test-image:latest'},
+    )
+
+    runtime = NomadRuntime(config=config, event_stream=None, sid='test-session')
+    job_spec = runtime._create_job_spec()
+
+    # Check that no GPU devices are added
+    task_groups = job_spec.get('TaskGroups', [])
+    tasks = task_groups[0].get('Tasks', [])
+    task = tasks[0]
+    resources = task.get('Resources', {})
+    devices = resources.get('Devices')
+
+    # Should not have GPU devices
+    assert devices is None
+
+    # Should not have GPU-specific Docker config
+    docker_config = task.get('Config', {})
+    assert docker_config.get('runtime') != 'nvidia'
+
+
 if __name__ == '__main__':
     pytest.main([__file__])

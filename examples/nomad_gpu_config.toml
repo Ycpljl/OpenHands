@@ -1,0 +1,38 @@
+# Example configuration for using OpenHands with Nomad runtime and GPU support
+
+[core]
+# Set the runtime to use Nomad
+runtime = "nomad"
+
+[sandbox]
+# Nomad cluster configuration
+nomad_address = "http://localhost:4646"  # Nomad API address
+# nomad_token = "your-nomad-token"       # Optional: Nomad ACL token
+# nomad_namespace = "openhands"          # Optional: Nomad namespace (default: "default")
+# nomad_datacenter = "dc1"               # Optional: Nomad datacenter (default: "dc1")
+
+# Resource allocation for Nomad jobs
+nomad_cpu = 2000      # CPU in MHz (higher for GPU workloads)
+nomad_memory = 8192   # Memory in MB (higher for GPU workloads)
+
+# GPU configuration
+enable_gpu = true                        # Enable GPU support
+nomad_gpu_count = 1                      # Number of GPUs to allocate
+nomad_gpu_type = "nvidia/tesla-v100"     # Specific GPU type (optional)
+
+# Container image configuration (GPU-enabled image)
+runtime_container_image = "tensorflow/tensorflow:latest-gpu"
+
+# Additional environment variables for GPU workloads
+[sandbox.runtime_startup_env_vars]
+CUDA_VISIBLE_DEVICES = "all"
+TF_FORCE_GPU_ALLOW_GROWTH = "true"
+
+# Example LLM configuration
+[llm]
+model = "gpt-4"
+api_key = "your-openai-api-key"
+
+# Example agent configuration
+[agent]
+name = "CodeActAgent"

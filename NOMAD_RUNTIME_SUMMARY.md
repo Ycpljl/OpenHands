@@ -21,6 +21,7 @@ Successfully implemented a Nomad runtime plugin for OpenHands that enables conta
 
 ### Examples and Documentation
 - **`examples/nomad_config.toml`** - Example configuration file
+- **`examples/nomad_gpu_config.toml`** - GPU-specific configuration example
 - **`examples/nomad_example.py`** - Working example script
 
 ## Key Features Implemented
@@ -34,7 +35,7 @@ Successfully implemented a Nomad runtime plugin for OpenHands that enables conta
 ### 2. Container Management
 - Dynamic job specification generation
 - Resource allocation (CPU, memory)
-- GPU support (optional)
+- **Comprehensive GPU support** with configurable count and type constraints
 - Network port management
 - Container lifecycle management
 
@@ -45,6 +46,8 @@ Successfully implemented a Nomad runtime plugin for OpenHands that enables conta
 - `nomad_datacenter` - Target datacenter (default: "dc1")
 - `nomad_cpu` - CPU allocation in MHz (default: 1000)
 - `nomad_memory` - Memory allocation in MB (default: 2048)
+- `nomad_gpu_count` - Number of GPUs to allocate (default: 1 when GPU enabled)
+- `nomad_gpu_type` - GPU type constraint (default: "nvidia/gpu")
 
 ### 4. Runtime Features
 - Async/await support for non-blocking operations

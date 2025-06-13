@@ -20,7 +20,10 @@ runtime_container_image = "openhands-runtime:latest"  # Required: Runtime contai
 # base_container_image = "nikolaik/python-nodejs:python3.12-nodejs22"  # Alternative: base image to build from
 
 # GPU support (optional)
-# enable_gpu = true
+# enable_gpu = true                    # Enable GPU support
+# nomad_gpu_count = 1                  # Number of GPUs to allocate (default: 1)
+# nomad_gpu_type = "nvidia/gpu"        # GPU type constraint (default: "nvidia/gpu")
+# nomad_gpu_type = "nvidia/tesla-v100" # Example: specific GPU model
 
 # Additional environment variables for the runtime
 [sandbox.runtime_startup_env_vars]

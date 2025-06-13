@@ -319,18 +319,69 @@ class NomadRuntime(ActionExecutionClient):
 
         # Add GPU support if enabled
         if self.config.sandbox.enable_gpu:
+            gpu_count = self.config.sandbox.nomad_gpu_count or 1
+            gpu_type = self.config.sandbox.nomad_gpu_type or 'nvidia/gpu'
+
+            self.log(
+                'info',
+                f'GPU support enabled, adding {gpu_count} GPU(s) of type {gpu_type} to job spec',
+            )
+
             task_groups = job_spec.get('TaskGroups', [])
             if task_groups and isinstance(task_groups, list):
                 tasks = task_groups[0].get('Tasks', [])
                 if tasks and isinstance(tasks, list):
-                    resources = tasks[0].get('Resources', {})
+                    task = tasks[0]
+                    resources = task.get('Resources', {})
                     if isinstance(resources, dict):
+                        # Add GPU device requirement
                         resources['Devices'] = [
                             {
-                                'Name': 'nvidia/gpu',
-                                'Count': 1,
+                                'Name': gpu_type,
+                                'Count': gpu_count,
                             }
                         ]
+
+                    # Add GPU-specific Docker configuration
+                    docker_config = task.get('Config', {})
+                    if isinstance(docker_config, dict):
+                        # Enable GPU runtime for Docker
+                        docker_config['runtime'] = 'nvidia'
+
+                        # Add GPU capabilities
+                        if 'cap_add' not in docker_config:
+                            docker_config['cap_add'] = []
+                        docker_config['cap_add'].extend(['SYS_ADMIN'])
+
+                        # Mount GPU devices (for multiple GPUs)
+                        gpu_devices = ['/dev/nvidiactl', '/dev/nvidia-uvm']
+                        for i in range(gpu_count):
+                            gpu_devices.append(f'/dev/nvidia{i}')
+                        docker_config['devices'] = gpu_devices
+
+                        # Add NVIDIA environment variables
+                        task_env = task.get('Env', {})
+                        if isinstance(task_env, dict):
+                            task_env.update(
+                                {
+                                    'NVIDIA_VISIBLE_DEVICES': 'all',
+                                    'NVIDIA_DRIVER_CAPABILITIES': 'compute,utility',
+                                    'CUDA_VISIBLE_DEVICES': 'all',
+                                }
+                            )
+
+                        # Add GPU-specific constraints if needed
+                        if 'Constraints' not in task:
+                            task['Constraints'] = []
+
+                        # Add constraint to ensure the node has the required GPU type
+                        task['Constraints'].append(
+                            {
+                                'LTarget': '${attr.driver.docker.runtime.nvidia}',
+                                'RTarget': 'true',
+                                'Operand': '=',
+                            }
+                        )
 
         return job_spec
 
