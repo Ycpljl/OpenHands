@@ -256,8 +256,10 @@ class NomadRuntime(ActionExecutionClient):
                     'Count': 1,
                     'RestartPolicy': {
                         'Attempts': 3,
-                        'Interval': '5m',
-                        'Delay': '25s',
+                        # Note: Nomad JSON API requires time.Duration fields as nanoseconds (int),
+                        # not string format like "5m" which is used in HCL
+                        'Interval': 300000000000,  # 5 minutes in nanoseconds
+                        'Delay': 25000000000,  # 25 seconds in nanoseconds
                         'Mode': 'fail',
                     },
                     'Tasks': [
