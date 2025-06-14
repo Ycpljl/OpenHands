@@ -95,6 +95,11 @@ class NomadRuntime(ActionExecutionClient):
             self.enable_service_discovery = os.environ.get(
                 'NOMAD_ENABLE_SERVICE_DISCOVERY', 'true'
             ).lower() in ('true', '1', 'yes')
+        
+        # Network configuration
+        # Supported modes: bridge, host, none, or custom network name
+        self.network_mode = os.environ.get('NOMAD_NETWORK_MODE', 'bridge')
+        self.custom_network = os.environ.get('NOMAD_CUSTOM_NETWORK', None)
 
         # Job configuration
         self.job_id = f'openhands-runtime-{sid}'
@@ -290,17 +295,7 @@ class NomadRuntime(ActionExecutionClient):
                                 'MemoryMB': self.config.sandbox.nomad_memory
                                 or 2048,  # MB
                             },
-                            'Networks': [
-                                {
-                                    'Mode': 'bridge',
-                                    'DynamicPorts': [
-                                        {
-                                            'Label': 'action_server',
-                                            'To': self.container_port,  # Container internal port
-                                        }
-                                    ],
-                                }
-                            ],
+                            'Networks': self._create_network_config(),
                         }
                     ],
                 }
@@ -398,6 +393,51 @@ class NomadRuntime(ActionExecutionClient):
                         )
 
         return job_spec
+
+    def _create_network_config(self) -> list[dict[str, Any]]:
+        """Create network configuration based on network mode."""
+        if self.network_mode == 'host':
+            # Host networking - container uses host network directly
+            # Note: In host mode, no port mapping is needed
+            return [
+                {
+                    'Mode': 'host',
+                }
+            ]
+        elif self.network_mode == 'none':
+            # No networking
+            return [
+                {
+                    'Mode': 'none',
+                }
+            ]
+        elif self.custom_network:
+            # Custom Docker network
+            return [
+                {
+                    'Mode': 'bridge',
+                    'Device': self.custom_network,
+                    'DynamicPorts': [
+                        {
+                            'Label': 'action_server',
+                            'To': self.container_port,
+                        }
+                    ],
+                }
+            ]
+        else:
+            # Default bridge networking with dynamic port allocation
+            return [
+                {
+                    'Mode': 'bridge',
+                    'DynamicPorts': [
+                        {
+                            'Label': 'action_server',
+                            'To': self.container_port,  # Container internal port
+                        }
+                    ],
+                }
+            ]
 
     def _wait_for_allocation(self) -> None:
         """Wait for job allocation and get allocation info."""
