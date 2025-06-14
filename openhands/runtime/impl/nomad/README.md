@@ -483,7 +483,34 @@ import logging
 logging.getLogger('openhands.runtime.impl.nomad').setLevel(logging.DEBUG)
 ```
 
-#### 6. Container Image Pull Failures
+#### 6. Container Exit with Non-Zero Code
+
+**Problem**: `Container exited with non-zero exit code: 252` or similar
+
+**Cause**: The action execution server container is starting but then exiting unexpectedly.
+
+**Common Exit Codes**:
+- **252**: Container configuration or startup failure
+- **125**: Docker daemon error or container runtime issue
+- **126**: Container command not executable
+- **127**: Container command not found
+
+**Solutions**:
+1. **Check Nomad allocation logs**:
+   ```bash
+   nomad alloc logs <allocation-id>
+   ```
+
+2. **Verify container image**: Ensure the runtime image is compatible and accessible
+3. **Check resource limits**: Increase CPU/memory if the container is being killed
+4. **Review startup command**: Verify the action execution server command is correct
+5. **Disable service discovery** if Consul is not available:
+   ```toml
+   [sandbox]
+   nomad_enable_service_discovery = false
+   ```
+
+#### 7. Container Image Pull Failures
 
 **Problem**: Nomad cannot pull the container image.
 

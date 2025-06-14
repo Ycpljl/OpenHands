@@ -431,6 +431,26 @@ class NomadRuntime(ActionExecutionClient):
                         raise AgentRuntimeError(
                             f'Allocation failed with status: {client_status}'
                         )
+                    elif client_status == 'complete':
+                        # Check task exit codes to determine if this is an error
+                        task_states = allocation.get('TaskStates', {})
+                        for task_name, task_state in task_states.items():
+                            if isinstance(task_state, dict):
+                                events = task_state.get('Events', [])
+                                for event in events:
+                                    if (isinstance(event, dict) and 
+                                        event.get('Type') == 'Terminated'):
+                                        exit_code = event.get('ExitCode', 0)
+                                        if exit_code != 0:
+                                            raise AgentRuntimeError(
+                                                f'Container exited with non-zero exit code: {exit_code}. '
+                                                f'Check Nomad logs for details: nomad alloc logs {alloc_id}'
+                                            )
+                        # If we get here, the task completed successfully but shouldn't have
+                        raise AgentRuntimeError(
+                            f'Container completed unexpectedly. This usually indicates '
+                            f'the action execution server exited. Check Nomad logs: nomad alloc logs {alloc_id}'
+                        )
 
                 time.sleep(2)
 
