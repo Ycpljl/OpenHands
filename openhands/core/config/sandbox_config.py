@@ -125,6 +125,14 @@ class SandboxConfig(BaseModel):
         default=None,
         description='Whether to enable Consul service discovery for Nomad jobs. Requires Consul integration. If not set, will use NOMAD_ENABLE_SERVICE_DISCOVERY environment variable or default to True.',
     )
+    nomad_network_mode: str | None = Field(
+        default=None,
+        description='Network mode for Nomad containers. Only "bridge" mode is supported for reliable multi-job deployment. If not set, will use NOMAD_NETWORK_MODE environment variable or default to "bridge".',
+    )
+    nomad_custom_network: str | None = Field(
+        default=None,
+        description='Custom Docker network name to use for Nomad containers. If not set, will use NOMAD_CUSTOM_NETWORK environment variable or use default Docker bridge network.',
+    )
 
     model_config = {'extra': 'forbid'}
 

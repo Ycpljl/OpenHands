@@ -70,77 +70,61 @@ nomad_memory = 2048   # Memory in MB, default 2048
 
 # Container image
 runtime_container_image = "your-registry/openhands-runtime:latest"
+
+# Network configuration (optional)
+nomad_network_mode = "bridge"                      # Only bridge mode supported
+nomad_custom_network = "my-custom-network"         # Optional: use custom Docker network
 ```
 
 ### Network Configuration
 
-OpenHands Nomad runtime supports multiple network modes for different deployment scenarios:
+OpenHands Nomad runtime 使用 **Bridge 网络模式**，专为多 job 部署优化：
 
-#### Bridge Mode (Default)
-```bash
-# Default bridge networking with dynamic port allocation
-# Each container gets its own network namespace and dynamic host port
-export NOMAD_NETWORK_MODE="bridge"
+#### 配置方式
+
+**方式 1: config.toml 配置 (推荐)**
+```toml
+[sandbox]
+# 网络模式 (只支持 bridge)
+nomad_network_mode = "bridge"
+
+# 可选：使用自定义 Docker 网络
+nomad_custom_network = "openhands-network"
 ```
 
-**特点:**
-- ✅ 支持多个并发 job (动态端口分配避免冲突)
-- ✅ 容器间网络隔离
-- ✅ 自动端口映射
-- ✅ 适合生产环境
-
-#### Host Networking
+**方式 2: 环境变量配置**
 ```bash
-# Container uses host network directly (no port mapping needed)
-export NOMAD_NETWORK_MODE="host"
-```
-
-**特点:**
-- ⚠️ 容器直接使用主机网络
-- ⚠️ 可能有端口冲突 (多个 job 使用相同端口)
-- ✅ 网络性能最佳
-- ✅ 适合单 job 或特殊网络需求
-
-#### Custom Docker Network
-```bash
-# Use a specific Docker network for container isolation
+# 网络模式 (只支持 bridge)
 export NOMAD_NETWORK_MODE="bridge"
+
+# 可选：使用自定义 Docker 网络
 export NOMAD_CUSTOM_NETWORK="openhands-network"
 ```
 
-**特点:**
-- ✅ 使用预创建的 Docker 网络
-- ✅ 更好的网络控制和隔离
-- ✅ 支持多个 job (如果网络支持)
-- ✅ 适合复杂网络拓扑
+#### Bridge 网络特点
 
-#### No Networking
-```bash
-# Disable networking (for testing or special use cases)
-export NOMAD_NETWORK_MODE="none"
-```
+- ✅ **完全支持多个并发 job** - 动态端口分配避免冲突
+- ✅ **容器间网络隔离** - 每个容器独立的网络命名空间
+- ✅ **自动端口映射** - 容器内部端口 60000 映射到动态主机端口
+- ✅ **生产环境就绪** - 稳定可靠的网络配置
+- ✅ **支持自定义网络** - 可使用预创建的 Docker 网络
 
-**特点:**
-- ⚠️ 容器无网络连接
-- ⚠️ 仅适合特殊测试场景
-- ❌ 不适合正常使用
+#### 多 Job 支持
 
-### Multi-Job Support
-
-OpenHands Nomad runtime 完全支持同时运行多个 job：
+同时运行多个 OpenHands 实例：
 
 ```bash
-# 启动多个 OpenHands 实例
+# 启动多个 OpenHands 实例 (自动端口分配)
 python -m openhands.cli.main --runtime nomad --task "Task 1" &
 python -m openhands.cli.main --runtime nomad --task "Task 2" &
 python -m openhands.cli.main --runtime nomad --task "Task 3" &
 ```
 
 **网络隔离机制:**
-- 每个 job 有独立的 Nomad 任务
-- 动态端口分配避免冲突
-- 独立的容器网络命名空间
-- 独立的文件系统和进程空间
+- 每个 job 有独立的 Nomad 任务和容器
+- 动态端口分配 (例如: 32768, 32769, 32770...)
+- 独立的容器网络命名空间和文件系统
+- 无端口冲突，支持无限扩展
 
 ## Usage
 
