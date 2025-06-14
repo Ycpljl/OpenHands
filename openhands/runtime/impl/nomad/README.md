@@ -70,36 +70,11 @@ nomad_memory = 2048   # Memory in MB, default 2048
 
 # Container image
 runtime_container_image = "your-registry/openhands-runtime:latest"
-
-# Network configuration (optional)
-nomad_network_mode = "bridge"                      # Only bridge mode supported
-nomad_custom_network = "my-custom-network"         # Optional: use custom Docker network
 ```
 
 ### Network Configuration
 
 OpenHands Nomad runtime 使用 **Bridge 网络模式**，专为多 job 部署优化：
-
-#### 配置方式
-
-**方式 1: config.toml 配置 (推荐)**
-```toml
-[sandbox]
-# 网络模式 (只支持 bridge)
-nomad_network_mode = "bridge"
-
-# 可选：使用自定义 Docker 网络
-nomad_custom_network = "openhands-network"
-```
-
-**方式 2: 环境变量配置**
-```bash
-# 网络模式 (只支持 bridge)
-export NOMAD_NETWORK_MODE="bridge"
-
-# 可选：使用自定义 Docker 网络
-export NOMAD_CUSTOM_NETWORK="openhands-network"
-```
 
 #### Bridge 网络特点
 
@@ -107,7 +82,7 @@ export NOMAD_CUSTOM_NETWORK="openhands-network"
 - ✅ **容器间网络隔离** - 每个容器独立的网络命名空间
 - ✅ **自动端口映射** - 容器内部端口 60000 映射到动态主机端口
 - ✅ **生产环境就绪** - 稳定可靠的网络配置
-- ✅ **支持自定义网络** - 可使用预创建的 Docker 网络
+- ✅ **零配置** - 无需额外网络配置，开箱即用
 
 #### 多 Job 支持
 
@@ -125,6 +100,7 @@ python -m openhands.cli.main --runtime nomad --task "Task 3" &
 - 动态端口分配 (例如: 32768, 32769, 32770...)
 - 独立的容器网络命名空间和文件系统
 - 无端口冲突，支持无限扩展
+- 零配置，开箱即用
 
 ## Usage
 
