@@ -699,10 +699,24 @@ class NomadRuntime(ActionExecutionClient):
         return {}
 
     def get_action_execution_server_startup_command(self) -> list[str]:
-        """Get the command to start the action execution server."""
-        return get_action_execution_server_startup_command(
-            server_port=self.container_port,
+        """Get the command to start the action execution server.
+        
+        In host networking mode, we use a shell wrapper to interpolate
+        the dynamic port from the environment variable.
+        """
+        # Get the base command with a placeholder port
+        base_cmd = get_action_execution_server_startup_command(
+            server_port=60000,  # Placeholder, will be replaced
             plugins=self.plugins,
             app_config=self.config,
             main_module=self.main_module,
         )
+        
+        # Create a shell command that replaces the port with the environment variable
+        # Convert the command to a shell script that uses the dynamic port
+        cmd_str = ' '.join(f'"{arg}"' for arg in base_cmd)
+        # Replace the placeholder port with the environment variable
+        cmd_str = cmd_str.replace('60000', '${port}')
+        
+        # Return a shell command that executes the interpolated command
+        return ['/bin/bash', '-c', cmd_str]
