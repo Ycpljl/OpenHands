@@ -275,6 +275,8 @@ class NomadRuntime(ActionExecutionClient):
                         'Delay': 25000000000,  # 25 seconds in nanoseconds
                         'Mode': 'fail',
                     },
+                    # Networks should be at TaskGroup level, not Task level
+                    'Networks': self._create_network_config(),
                     'Tasks': [
                         {
                             'Name': 'action-server',
@@ -284,8 +286,7 @@ class NomadRuntime(ActionExecutionClient):
                                 'command': command[0] if command else '/bin/bash',
                                 'args': command[1:] if len(command) > 1 else [],
                                 'work_dir': '/openhands/code/',
-                                # Port mapping is handled by Networks configuration
-                                # No need for ports field in Docker driver config when using task-level Networks
+                                # Port mapping is handled by TaskGroup-level Networks configuration
                             },
                             'Env': environment,
                             'Resources': {
@@ -293,7 +294,7 @@ class NomadRuntime(ActionExecutionClient):
                                 'MemoryMB': self.config.sandbox.nomad_memory
                                 or 2048,  # MB
                             },
-                            'Networks': self._create_network_config(),
+                            # Networks removed from task level - now at TaskGroup level
                         }
                     ],
                 }
@@ -518,12 +519,12 @@ class NomadRuntime(ActionExecutionClient):
             node_ip = None
             action_server_port = None
             
-            # Method 1: Check Resources.Networks (older format)
+            # Method 1: Check Resources.Networks (TaskGroup level - current format)
             resources = alloc_detail.get('Resources', {})
             if isinstance(resources, dict):
                 networks = resources.get('Networks', [])
                 if networks and isinstance(networks, list):
-                    self.log('debug', 'Found networks in Resources.Networks')
+                    self.log('debug', 'Found networks in Resources.Networks (TaskGroup level)')
                     network = networks[0]
                     node_ip = network.get('IP')
                     dynamic_ports = network.get('DynamicPorts', [])

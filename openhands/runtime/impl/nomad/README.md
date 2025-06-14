@@ -483,7 +483,23 @@ import logging
 logging.getLogger('openhands.runtime.impl.nomad').setLevel(logging.DEBUG)
 ```
 
-#### 6. Container Exit with Non-Zero Code
+#### 6. Action Server Port Not Found
+
+**Problem**: `Action server port not found in allocation`
+
+**Cause**: Network configuration is not properly applied to the Nomad job, resulting in no dynamic ports being allocated.
+
+**Solutions**:
+1. **Verify network configuration**: Ensure networks are configured at TaskGroup level (not Task level)
+2. **Check allocation structure**: Use debug logging to inspect the allocation:
+   ```bash
+   # Enable debug logging
+   export OPENHANDS_LOG_LEVEL=DEBUG
+   ```
+3. **Verify Nomad version compatibility**: Ensure using Nomad 1.4+ with proper network configuration
+4. **Check port label matching**: Ensure port label "action_server" is correctly configured
+
+#### 7. Container Exit with Non-Zero Code
 
 **Problem**: `Container exited with non-zero exit code: 252` or similar
 
