@@ -379,3 +379,78 @@ The Nomad runtime can be integrated with CI/CD pipelines for automated testing a
       --runtime-container-image ${{ env.RUNTIME_IMAGE }} \
       --task "Run test suite"
 ```
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Connection Refused Error
+
+**Problem**: `[Errno 61] Connection refused` when connecting to runtime container.
+
+**Causes**:
+- Network configuration issues
+- Port mapping problems
+- Nomad version compatibility
+
+**Solutions**:
+- Ensure you're using a modern Nomad version (1.4+)
+- Verify network mode is set to `bridge`
+- Check that dynamic ports are properly configured
+- Disable service discovery if Consul is not available:
+  ```toml
+  [sandbox]
+  nomad_enable_service_discovery = false
+  ```
+
+#### 2. Consul Version Constraint Error
+
+**Problem**: `Constraint ${attr.consul.version} semver >= 1.8.0 filtered 1 node`
+
+**Solution**: Disable service discovery if Consul is not available:
+```bash
+export NOMAD_ENABLE_SERVICE_DISCOVERY="false"
+```
+Or in config.toml:
+```toml
+[sandbox]
+nomad_enable_service_discovery = false
+```
+
+#### 3. Job Placement Failures
+
+**Problem**: Jobs fail to be placed on any nodes.
+
+**Solutions**:
+- Check node eligibility: `nomad node status`
+- Verify resource requirements don't exceed available resources
+- Review job constraints and node attributes
+- Check Docker driver is enabled on nodes
+
+#### 4. Container Image Pull Failures
+
+**Problem**: Nomad cannot pull the container image.
+
+**Solutions**:
+- Ensure image exists and is accessible from Nomad nodes
+- Configure Docker registry authentication if needed
+- Use fully qualified image names (registry/namespace/image:tag)
+
+### Debugging Commands
+
+```bash
+# Check job status
+nomad job status openhands-runtime-<session-id>
+
+# View job logs
+nomad alloc logs <allocation-id>
+
+# Check node status
+nomad node status
+
+# View allocation details
+nomad alloc status <allocation-id>
+
+# Monitor job events
+nomad job history openhands-runtime-<session-id>
+```

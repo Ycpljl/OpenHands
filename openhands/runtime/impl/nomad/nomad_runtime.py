@@ -280,10 +280,8 @@ class NomadRuntime(ActionExecutionClient):
                                 'command': command[0] if command else '/bin/bash',
                                 'args': command[1:] if len(command) > 1 else [],
                                 'work_dir': '/openhands/code/',
-                                'port_map': [
-                                    {
-                                        'action_server': self.container_port,
-                                    }
+                                'ports': [
+                                    'action_server'
                                 ],
                             },
                             'Env': environment,
@@ -291,18 +289,18 @@ class NomadRuntime(ActionExecutionClient):
                                 'CPU': self.config.sandbox.nomad_cpu or 1000,  # MHz
                                 'MemoryMB': self.config.sandbox.nomad_memory
                                 or 2048,  # MB
-                                'Networks': [
-                                    {
-                                        'MBits': 10,
-                                        'DynamicPorts': [
-                                            {
-                                                'Label': 'action_server',
-                                                'Value': 0,  # Dynamic port assignment
-                                            }
-                                        ],
-                                    }
-                                ],
                             },
+                            'Networks': [
+                                {
+                                    'Mode': 'bridge',
+                                    'DynamicPorts': [
+                                        {
+                                            'Label': 'action_server',
+                                            'To': self.container_port,  # Container internal port
+                                        }
+                                    ],
+                                }
+                            ],
                         }
                     ],
                 }
