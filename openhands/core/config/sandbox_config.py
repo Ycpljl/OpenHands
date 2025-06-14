@@ -121,6 +121,10 @@ class SandboxConfig(BaseModel):
         default=None,
         description='GPU type constraint for Nomad jobs (e.g., "nvidia/tesla-v100"). Default is "nvidia/gpu".',
     )
+    nomad_enable_service_discovery: bool | None = Field(
+        default=None,
+        description='Whether to enable Consul service discovery for Nomad jobs. Requires Consul integration. If not set, will use NOMAD_ENABLE_SERVICE_DISCOVERY environment variable or default to True.',
+    )
 
     model_config = {'extra': 'forbid'}
 

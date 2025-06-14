@@ -88,10 +88,13 @@ class NomadRuntime(ActionExecutionClient):
         )
         
         # Service discovery configuration (requires Consul)
-        # Set to False to disable service discovery if Consul is not available
-        self.enable_service_discovery = os.environ.get(
-            'NOMAD_ENABLE_SERVICE_DISCOVERY', 'true'
-        ).lower() in ('true', '1', 'yes')
+        # Priority: config.toml > environment variable > default (True)
+        if config.sandbox.nomad_enable_service_discovery is not None:
+            self.enable_service_discovery = config.sandbox.nomad_enable_service_discovery
+        else:
+            self.enable_service_discovery = os.environ.get(
+                'NOMAD_ENABLE_SERVICE_DISCOVERY', 'true'
+            ).lower() in ('true', '1', 'yes')
 
         # Job configuration
         self.job_id = f'openhands-runtime-{sid}'

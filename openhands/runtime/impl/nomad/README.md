@@ -57,9 +57,12 @@ runtime = "nomad"
 
 # Nomad cluster configuration
 nomad_address = "http://your-nomad-cluster:4646"
-nomad_token = "your-nomad-token"        # Optional
-nomad_namespace = "openhands"           # Optional
-nomad_datacenter = "dc1"                # Optional
+nomad_token = "your-nomad-token"                    # Optional
+nomad_namespace = "openhands"                       # Optional
+nomad_datacenter = "dc1"                            # Optional
+
+# Service discovery (Consul integration)
+nomad_enable_service_discovery = false              # Optional, default is true
 
 # Resource allocation
 nomad_cpu = 1000      # CPU in MHz, default 1000
