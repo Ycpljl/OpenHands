@@ -433,7 +433,15 @@ The Nomad runtime can be integrated with CI/CD pipelines for automated testing a
   nomad_enable_service_discovery = false
   ```
 
-#### 2. Consul Version Constraint Error
+#### 2. Port Configuration Error
+
+**Problem**: `Port "action_server" not found, check network block`
+
+**Cause**: Mismatch between Docker driver port configuration and network block configuration.
+
+**Solution**: This has been fixed in the current version. The Docker driver no longer uses the `ports` field, and all port mapping is handled by the task-level `Networks` configuration with dynamic port allocation.
+
+#### 3. Consul Version Constraint Error
 
 **Problem**: `Constraint ${attr.consul.version} semver >= 1.8.0 filtered 1 node`
 
@@ -447,7 +455,7 @@ Or in config.toml:
 nomad_enable_service_discovery = false
 ```
 
-#### 3. Job Placement Failures
+#### 4. Job Placement Failures
 
 **Problem**: Jobs fail to be placed on any nodes.
 
@@ -457,7 +465,7 @@ nomad_enable_service_discovery = false
 - Review job constraints and node attributes
 - Check Docker driver is enabled on nodes
 
-#### 4. Container Image Pull Failures
+#### 5. Container Image Pull Failures
 
 **Problem**: Nomad cannot pull the container image.
 

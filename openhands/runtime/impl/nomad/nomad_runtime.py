@@ -284,9 +284,8 @@ class NomadRuntime(ActionExecutionClient):
                                 'command': command[0] if command else '/bin/bash',
                                 'args': command[1:] if len(command) > 1 else [],
                                 'work_dir': '/openhands/code/',
-                                'ports': [
-                                    'action_server'
-                                ],
+                                # Port mapping is handled by Networks configuration
+                                # No need for ports field in Docker driver config when using task-level Networks
                             },
                             'Env': environment,
                             'Resources': {
