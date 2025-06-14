@@ -482,40 +482,89 @@ class NomadRuntime(ActionExecutionClient):
             if not isinstance(alloc_detail, dict):
                 raise AgentRuntimeError('Invalid allocation response format')
 
-            resources = alloc_detail.get('Resources', {})
-            if not isinstance(resources, dict):
-                raise AgentRuntimeError('Invalid resources format in allocation')
-
-            networks = resources.get('Networks', [])
-            if not isinstance(networks, list) or not networks:
-                raise AgentRuntimeError('No network information found in allocation')
-
-            network = networks[0]
-            if not isinstance(network, dict):
-                raise AgentRuntimeError('Invalid network format in allocation')
-
-            node_ip = network.get('IP')
-            if not isinstance(node_ip, str):
-                raise AgentRuntimeError('Invalid IP address in allocation')
-
-            # Find the dynamic port for action_server
-            dynamic_ports = network.get('DynamicPorts', [])
-            if not isinstance(dynamic_ports, list):
-                raise AgentRuntimeError('Invalid dynamic ports format in allocation')
-
+            # Debug: Log allocation structure to understand the format
+            self.log('debug', f'Allocation detail keys: {list(alloc_detail.keys())}')
+            
+            # Try multiple possible locations for network information
+            networks = None
+            node_ip = None
             action_server_port = None
+            
+            # Method 1: Check Resources.Networks (older format)
+            resources = alloc_detail.get('Resources', {})
+            if isinstance(resources, dict):
+                networks = resources.get('Networks', [])
+                if networks and isinstance(networks, list):
+                    self.log('debug', 'Found networks in Resources.Networks')
+                    network = networks[0]
+                    node_ip = network.get('IP')
+                    dynamic_ports = network.get('DynamicPorts', [])
+                    for port_info in dynamic_ports:
+                        if (isinstance(port_info, dict) and 
+                            port_info.get('Label') == 'action_server'):
+                            action_server_port = port_info.get('Value')
+                            break
+            
+            # Method 2: Check AllocatedResources.Shared.Networks (newer format)
+            if not action_server_port:
+                alloc_resources = alloc_detail.get('AllocatedResources', {})
+                if isinstance(alloc_resources, dict):
+                    shared = alloc_resources.get('Shared', {})
+                    if isinstance(shared, dict):
+                        networks = shared.get('Networks', [])
+                        if networks and isinstance(networks, list):
+                            self.log('debug', 'Found networks in AllocatedResources.Shared.Networks')
+                            network = networks[0]
+                            node_ip = network.get('IP')
+                            dynamic_ports = network.get('DynamicPorts', [])
+                            for port_info in dynamic_ports:
+                                if (isinstance(port_info, dict) and 
+                                    port_info.get('Label') == 'action_server'):
+                                    action_server_port = port_info.get('Value')
+                                    break
+            
+            # Method 3: Check TaskResources (task-level networks)
+            if not action_server_port:
+                task_resources = alloc_detail.get('TaskResources', {})
+                if isinstance(task_resources, dict):
+                    # Look for our task name
+                    task_resource = task_resources.get('action-server', {})
+                    if isinstance(task_resource, dict):
+                        networks = task_resource.get('Networks', [])
+                        if networks and isinstance(networks, list):
+                            self.log('debug', 'Found networks in TaskResources.action-server.Networks')
+                            network = networks[0]
+                            node_ip = network.get('IP')
+                            dynamic_ports = network.get('DynamicPorts', [])
+                            for port_info in dynamic_ports:
+                                if (isinstance(port_info, dict) and 
+                                    port_info.get('Label') == 'action_server'):
+                                    action_server_port = port_info.get('Value')
+                                    break
 
-            for port_info in dynamic_ports:
-                if (
-                    isinstance(port_info, dict)
-                    and port_info.get('Label') == 'action_server'
-                ):
-                    port_value = port_info.get('Value')
-                    if isinstance(port_value, int):
-                        action_server_port = port_value
-                        break
+            # Method 4: Use NodeID and check node information for IP
+            if not node_ip:
+                node_id = alloc_detail.get('NodeID')
+                if node_id:
+                    try:
+                        node_response = self.nomad_client.get(f'/v1/node/{node_id}')
+                        node_response.raise_for_status()
+                        node_detail = node_response.json()
+                        # Use node's address as fallback
+                        node_ip = node_detail.get('HTTPAddr', '').split(':')[0]
+                        if not node_ip:
+                            node_ip = node_detail.get('Address', 'localhost')
+                        self.log('debug', f'Using node IP from node info: {node_ip}')
+                    except Exception as e:
+                        self.log('warning', f'Failed to get node info: {e}')
+                        node_ip = 'localhost'  # Fallback
+
+            if not node_ip:
+                raise AgentRuntimeError('No IP address found in allocation')
 
             if not action_server_port:
+                # Debug: Log the full allocation structure for troubleshooting
+                self.log('error', f'Full allocation structure: {alloc_detail}')
                 raise AgentRuntimeError('Action server port not found in allocation')
 
             self.runtime_url = f'http://{node_ip}:{action_server_port}'

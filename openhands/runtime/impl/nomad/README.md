@@ -465,7 +465,25 @@ nomad_enable_service_discovery = false
 - Review job constraints and node attributes
 - Check Docker driver is enabled on nodes
 
-#### 5. Container Image Pull Failures
+#### 5. Network Information Not Found
+
+**Problem**: `No network information found in allocation`
+
+**Cause**: Network information structure varies between Nomad versions.
+
+**Solution**: This has been fixed in the current version with improved network information detection that supports multiple Nomad versions and network configurations:
+- Checks `Resources.Networks` (older format)
+- Checks `AllocatedResources.Shared.Networks` (newer format)  
+- Checks `TaskResources.action-server.Networks` (task-level)
+- Falls back to node IP lookup if needed
+
+**Debugging**: Enable debug logging to see which network detection method is used:
+```python
+import logging
+logging.getLogger('openhands.runtime.impl.nomad').setLevel(logging.DEBUG)
+```
+
+#### 6. Container Image Pull Failures
 
 **Problem**: Nomad cannot pull the container image.
 
