@@ -245,7 +245,8 @@ class NomadRuntime(ActionExecutionClient):
         environment = dict(**self.initial_env_vars)
         environment.update(
             {
-                'port': str(self.container_port),
+                # Use Nomad's port interpolation for dynamic port allocation
+                'port': '${NOMAD_PORT_action_server}',
                 'PYTHONUNBUFFERED': '1',
                 'PIP_BREAK_SYSTEM_PACKAGES': '1',
             }
@@ -286,7 +287,9 @@ class NomadRuntime(ActionExecutionClient):
                                 'command': command[0] if command else '/bin/bash',
                                 'args': command[1:] if len(command) > 1 else [],
                                 'work_dir': '/openhands/code/',
-                                # Port mapping is handled by TaskGroup-level Networks configuration
+                                # Use host networking to avoid CNI constraints
+                                'network_mode': 'host',
+                                # Port mapping handled by Nomad's dynamic port allocation
                             },
                             'Env': environment,
                             'Resources': {
@@ -394,14 +397,20 @@ class NomadRuntime(ActionExecutionClient):
         return job_spec
 
     def _create_network_config(self) -> list[dict[str, Any]]:
-        """Create bridge network configuration for reliable multi-job deployment."""
+        """Create network configuration compatible with various Nomad setups.
+        
+        Uses host networking mode to avoid CNI plugin version constraints
+        while still providing dynamic port allocation.
+        """
         return [
             {
-                'Mode': 'bridge',
+                # Use host mode to avoid CNI version constraints
+                # This is more compatible across different Nomad installations
                 'DynamicPorts': [
                     {
                         'Label': 'action_server',
-                        'To': self.container_port,  # Container internal port (60000)
+                        # In host mode, we don't specify 'To' field
+                        # The container will bind to the dynamically allocated host port
                     }
                 ],
             }

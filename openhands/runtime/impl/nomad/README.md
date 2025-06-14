@@ -74,14 +74,14 @@ runtime_container_image = "your-registry/openhands-runtime:latest"
 
 ### Network Configuration
 
-OpenHands Nomad runtime 使用 **Bridge 网络模式**，专为多 job 部署优化：
+OpenHands Nomad runtime 使用 **Host 网络模式**，专为最大兼容性优化：
 
-#### Bridge 网络特点
+#### Host 网络特点
 
 - ✅ **完全支持多个并发 job** - 动态端口分配避免冲突
-- ✅ **容器间网络隔离** - 每个容器独立的网络命名空间
-- ✅ **自动端口映射** - 容器内部端口 60000 映射到动态主机端口
-- ✅ **生产环境就绪** - 稳定可靠的网络配置
+- ✅ **避免 CNI 插件约束** - 无需特定 CNI 版本要求
+- ✅ **自动端口分配** - 使用 Nomad 的 `${NOMAD_PORT_action_server}` 插值
+- ✅ **广泛兼容性** - 适用于各种 Nomad 安装环境
 - ✅ **零配置** - 无需额外网络配置，开箱即用
 
 #### 多 Job 支持
@@ -483,7 +483,26 @@ import logging
 logging.getLogger('openhands.runtime.impl.nomad').setLevel(logging.DEBUG)
 ```
 
-#### 6. Action Server Port Not Found
+#### 6. CNI Plugin Version Constraints
+
+**Problem**: `Constraint ${attr.plugins.cni.version.bridge} semver >= 0.4.0 filtered 1 node`
+
+**Cause**: Nomad cluster doesn't have the required CNI bridge plugin version when using bridge networking.
+
+**Solutions**:
+1. **Use host networking** (default): OpenHands now uses host networking mode to avoid CNI constraints
+2. **Update CNI plugins**: Install/update CNI plugins on Nomad nodes:
+   ```bash
+   # Install CNI plugins
+   sudo mkdir -p /opt/cni/bin
+   curl -L https://github.com/containernetworking/plugins/releases/download/v1.0.0/cni-plugins-linux-amd64-v1.0.0.tgz | sudo tar -C /opt/cni/bin -xz
+   ```
+3. **Check Nomad node attributes**:
+   ```bash
+   nomad node status -verbose <node-id>
+   ```
+
+#### 7. Action Server Port Not Found
 
 **Problem**: `Action server port not found in allocation`
 
