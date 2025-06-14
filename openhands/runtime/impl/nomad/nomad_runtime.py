@@ -505,6 +505,14 @@ class NomadRuntime(ActionExecutionClient):
             # Debug: Log allocation structure to understand the format
             self.log('debug', f'Allocation detail keys: {list(alloc_detail.keys())}')
             
+            # Debug: Log key sections for troubleshooting
+            if 'Resources' in alloc_detail:
+                self.log('debug', f'Resources keys: {list(alloc_detail["Resources"].keys()) if isinstance(alloc_detail["Resources"], dict) else "Not a dict"}')
+            if 'AllocatedResources' in alloc_detail:
+                self.log('debug', f'AllocatedResources keys: {list(alloc_detail["AllocatedResources"].keys()) if isinstance(alloc_detail["AllocatedResources"], dict) else "Not a dict"}')
+            if 'TaskResources' in alloc_detail:
+                self.log('debug', f'TaskResources keys: {list(alloc_detail["TaskResources"].keys()) if isinstance(alloc_detail["TaskResources"], dict) else "Not a dict"}')
+            
             # Try multiple possible locations for network information
             networks = None
             node_ip = None
@@ -519,11 +527,14 @@ class NomadRuntime(ActionExecutionClient):
                     network = networks[0]
                     node_ip = network.get('IP')
                     dynamic_ports = network.get('DynamicPorts', [])
+                    self.log('debug', f'Resources.Networks dynamic ports: {dynamic_ports}')
                     for port_info in dynamic_ports:
-                        if (isinstance(port_info, dict) and 
-                            port_info.get('Label') == 'action_server'):
-                            action_server_port = port_info.get('Value')
-                            break
+                        if isinstance(port_info, dict):
+                            self.log('debug', f'Port info: {port_info}')
+                            if port_info.get('Label') == 'action_server':
+                                action_server_port = port_info.get('Value')
+                                self.log('debug', f'Found action_server port: {action_server_port}')
+                                break
             
             # Method 2: Check AllocatedResources.Shared.Networks (newer format)
             if not action_server_port:
@@ -537,11 +548,14 @@ class NomadRuntime(ActionExecutionClient):
                             network = networks[0]
                             node_ip = network.get('IP')
                             dynamic_ports = network.get('DynamicPorts', [])
+                            self.log('debug', f'AllocatedResources.Shared.Networks dynamic ports: {dynamic_ports}')
                             for port_info in dynamic_ports:
-                                if (isinstance(port_info, dict) and 
-                                    port_info.get('Label') == 'action_server'):
-                                    action_server_port = port_info.get('Value')
-                                    break
+                                if isinstance(port_info, dict):
+                                    self.log('debug', f'Port info: {port_info}')
+                                    if port_info.get('Label') == 'action_server':
+                                        action_server_port = port_info.get('Value')
+                                        self.log('debug', f'Found action_server port: {action_server_port}')
+                                        break
             
             # Method 3: Check TaskResources (task-level networks)
             if not action_server_port:
@@ -556,11 +570,14 @@ class NomadRuntime(ActionExecutionClient):
                             network = networks[0]
                             node_ip = network.get('IP')
                             dynamic_ports = network.get('DynamicPorts', [])
+                            self.log('debug', f'TaskResources.action-server.Networks dynamic ports: {dynamic_ports}')
                             for port_info in dynamic_ports:
-                                if (isinstance(port_info, dict) and 
-                                    port_info.get('Label') == 'action_server'):
-                                    action_server_port = port_info.get('Value')
-                                    break
+                                if isinstance(port_info, dict):
+                                    self.log('debug', f'Port info: {port_info}')
+                                    if port_info.get('Label') == 'action_server':
+                                        action_server_port = port_info.get('Value')
+                                        self.log('debug', f'Found action_server port: {action_server_port}')
+                                        break
 
             # Method 4: Use NodeID and check node information for IP
             if not node_ip:
