@@ -581,11 +581,9 @@ class NomadRuntime(ActionExecutionClient):
             return
 
         try:
-            # Stop the job (but don't purge it)
-            stop_payload = {'JobID': self.job_id, 'Purge': False}
-            self._send_nomad_request(
-                'POST', f'/v1/job/{self.job_id}/stop', json=stop_payload
-            )
+            # Stop the job (but don't purge it) using DELETE method
+            params = {'purge': 'false'}
+            self._send_nomad_request('DELETE', f'/v1/job/{self.job_id}', params=params)
             self.log('info', f'Job paused: {self.job_id}')
         except Exception as e:
             self.log('error', f'Failed to pause job: {e}')

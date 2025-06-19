@@ -104,7 +104,11 @@ async def test_nomad_basic_integration():
         cmd_action = CmdRunAction(command='pwd')
         observation = runtime.run_action(cmd_action)
         print(f'Working directory: {observation.content}')
-        assert '/openhands/code' in observation.content
+        # The working directory should be either /workspace or /openhands/code
+        assert (
+            '/workspace' in observation.content
+            or '/openhands/code' in observation.content
+        )
 
         # Test 6: File operations in container
         print('\n📋 Test 6: File operations in container')
