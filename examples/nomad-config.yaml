@@ -1,0 +1,44 @@
+# OpenHands Nomad Runtime Configuration Example
+# This file shows how to configure OpenHands to use HashiCorp Nomad
+
+# Basic runtime configuration
+runtime: nomad
+
+# Sandbox configuration for Nomad
+sandbox:
+  # Nomad cluster connection
+  nomad_address: "http://119.8.51.245:4646"
+  nomad_token: "72b2d656-024e-5bc5-ba5a-b598c27f7c2e"
+  nomad_datacenter: "langcode_1"
+  nomad_namespace: "default"
+
+  # Container configuration
+  runtime_container_image: "ghcr.io/all-hands-ai/runtime:0.43-nikolaik"
+
+  # Resource allocation
+  nomad_cpu_limit: 2000    # 2 CPU cores (in MHz)
+  nomad_memory_limit: 4096 # 4GB RAM (in MB)
+
+  # IP address mapping for cloud environments (OPTIONAL)
+  #
+  # Scenario 1: Single IP environment - NO mapping needed
+  # If your Nomad cluster uses public IPs directly, simply omit this section
+  # or set it to null/empty. The runtime will use original IPs.
+  #
+  # Scenario 2: Multi-node environment with IP mapping
+  # If your Nomad cluster uses internal IPs that need to be mapped to external IPs,
+  # configure the mapping below. Only configured IPs will be mapped, others use original IPs.
+  nomad_ip_mapping:
+    "192.168.0.133": "119.8.51.245"  # Node 1: internal -> external
+    "192.168.0.134": "119.8.51.246"  # Node 2: internal -> external
+    "192.168.0.135": "119.8.51.247"  # Node 3: internal -> external
+    # Add more nodes as needed...
+
+# Optional: LLM configuration
+llm:
+  model: "gpt-4"
+  api_key: "your-api-key"
+
+# Optional: Agent configuration
+agent:
+  name: "CodeActAgent"
