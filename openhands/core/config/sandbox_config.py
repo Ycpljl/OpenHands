@@ -88,6 +88,38 @@ class SandboxConfig(BaseModel):
         description="Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'",
     )
 
+    # Nomad runtime configuration
+    nomad_address: str | None = Field(
+        default=None,
+        description='The address of the Nomad cluster (e.g., http://nomad.example.com:4646)',
+    )
+    nomad_token: str | None = Field(
+        default=None,
+        description='Authentication token for Nomad API access',
+    )
+    nomad_datacenter: str | None = Field(
+        default='dc1',
+        description='Target datacenter for Nomad job placement',
+    )
+    nomad_namespace: str | None = Field(
+        default='default',
+        description='Nomad namespace for job placement',
+    )
+    nomad_cpu_limit: int | None = Field(
+        default=1000,
+        description='CPU allocation for Nomad jobs in MHz',
+    )
+    nomad_memory_limit: int | None = Field(
+        default=2048,
+        description='Memory allocation for Nomad jobs in MB',
+    )
+    nomad_ip_mapping: dict[str, str] | None = Field(
+        default=None,
+        description='IP address mapping for cloud environments. Maps internal IPs to external IPs. '
+        'Supports multiple nodes (e.g., {"192.168.0.133": "119.8.51.245", "192.168.0.134": "119.8.51.246"}). '
+        'If not configured, original IPs are used directly.',
+    )
+
     model_config = {'extra': 'forbid'}
 
     @classmethod

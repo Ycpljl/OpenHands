@@ -1,0 +1,35 @@
+# OpenHands Nomad Runtime Configuration - Single IP Environment
+# This example shows configuration for environments where Nomad nodes
+# use public IPs directly (no IP mapping needed)
+
+# Basic runtime configuration
+runtime: nomad
+
+# Sandbox configuration for Nomad
+sandbox:
+  # Nomad cluster connection
+  nomad_address: "http://203.0.113.10:4646"  # Direct public IP
+  nomad_token: "your-nomad-token"
+  nomad_datacenter: "dc1"
+  nomad_namespace: "default"
+
+  # Container configuration
+  runtime_container_image: "ghcr.io/all-hands-ai/runtime:0.43-nikolaik"
+
+  # Resource allocation
+  nomad_cpu_limit: 2000    # 2 CPU cores (in MHz)
+  nomad_memory_limit: 4096 # 4GB RAM (in MB)
+
+  # NO IP mapping needed - omit nomad_ip_mapping or set to null
+  # nomad_ip_mapping: null
+
+  # The runtime will use the original IP addresses returned by Nomad
+
+# Optional: LLM configuration
+llm:
+  model: "gpt-4"
+  api_key: "your-api-key"
+
+# Optional: Agent configuration
+agent:
+  name: "CodeActAgent"
